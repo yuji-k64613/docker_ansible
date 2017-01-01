@@ -1,0 +1,13 @@
+---
+- hosts: localhost
+  connection: local
+  roles:
+    - docker
+- hosts: docker_host
+  connection: docker
+  roles:
+    - packages
+- hosts: docker_host
+  connection: docker
+  roles:
+    - sample

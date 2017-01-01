@@ -1,0 +1,22 @@
+- name: check image
+  local_action: shell docker images | awk '{print $1}' | grep '^{{image_name}}$'
+  changed_when: false
+  register: grep
+  failed_when: grep.rc not in [0, 1]
+- name: docker build
+  local_action: command docker build -t {{image_name}} .
+  when: grep.rc == 1
+- name: docker ps --filter status=exited
+  local_action: shell docker ps --filter name={{container_name}} --filter status=exited | wc -l
+  changed_when: false
+  register: wc1
+- name: docker ps
+  local_action: shell docker ps --filter name={{container_name}} | wc -l
+  changed_when: false
+  register: wc2
+- name: docker start
+  local_action: command docker start {{container_name}}
+  when: wc1.stdout.find("2") != -1 and wc2.stdout.find("2") == -1
+- name: docker run
+  local_action: command docker run -d --name {{container_name}} {{image_name}} tail -f /dev/null
+  when: wc1.stdout.find("2") == -1 and wc2.stdout.find("2") == -1
